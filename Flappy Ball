@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Flappy Basketball</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{overflow:hidden;touch-action:none;background:#c9c0ae}
+canvas{width:100vw;height:100vh}
+#s,#e{position:fixed;z-index:2;font:bold 30px Arial;text-shadow:0 2px 3px #000}
+#s{top:42%;left:50%;transform:translate(-50%,-50%);font-size:80px;color:#665b4d88}
+#e{top:12px;left:12px}
+#over{display:none;position:fixed;inset:0;background:#000b;color:white;z-index:5;align-items:center;justify-content:center;flex-direction:column;font:25px Arial}
+button{padding:14px 28px;font-size:20px}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="s">0</div>
+<div id="e">⚡⚡⚡⚡⚡</div>
+
+<div id="over">
+<h1>GAME OVER</h1>
+<p>Scor: <span id="fs">0</span></p>
+<button onclick="start()">Joacă din nou</button>
+</div>
+
+<script>
+const c=document.getElementById("c"),x=c.getContext("2d");
+let W,H,b,r,score,en,n,run;
+
+function size(){W=c.width=innerWidth;H=c.height=innerHeight}
+onresize=size;size();
+
+function start(){
+ score=0;en=5;n=1;run=1;r=[];
+ b={x:W*.28,y:H/2,v:0,R:27};
+ for(let i=0;i<4;i++) ring(W+280+i*350);
+ over.style.display="none";ui();
+}
+
+function ring(X){
+ r.push({x:X,y:140+Math.random()*(H-280),R:88,n:n++,p:0,m:0});
+}
+
+function ui(){
+ s.textContent=score;
+ e.textContent="⚡".repeat(en)+"▫️".repeat(5-en);
+}
+
+function jump(){if(run)b.v=-8.5}
+c.onpointerdown=jump;
+onkeydown=e=>{if(e.code=="Space")jump()};
+
+function end(){
+ run=0;
+ fs.textContent=score;
+ over.style.display="flex";
+}
+
+function update(){
+ if(!run)return;
+
+ b.v+=.42;b.y+=b.v;
+
+ r.forEach(q=>{
+   q.x-=3.2;
+
+   if(!q.p&&!q.m&&q.x<b.x){
+     let d=Math.hypot(b.x-q.x,b.y-q.y);
+
+     if(d<q.R-11-b.R){
+       q.p=1;score++;
+       if(en<5)en++;
+       ui();
+     }else{
+       q.m=1;en--;ui();
+       if(en<=0)end();
+     }
+   }
+ });
+
+ let q=r[r.length-1];
+ if(q&&q.x<W-230)ring(q.x+350);
+
+ r=r.filter(q=>q.x+q.R>-150);
+
+ if(b.y< b.R){b.y=b.R;b.v=0}
+ if(b.y>H-b.R)end();
+}
+
+function bg(){
+ let g=x.createLinearGradient(0,0,0,H);
+ g.addColorStop(0,"#ddd5c4");
+ g.addColorStop(1,"#b7ad98");
+ x.fillStyle=g;x.fillRect(0,0,W,H);
+
+ x.strokeStyle="#665a491c";x.lineWidth=2;
+
+ for(let y=0;y<H;y+=45)
+  for(let X=-95;X<W+95;X+=95)
+   x.strokeRect(X+(y/45%2)*45,y+7,88,33);
+}
+
+function rings(){
+ r.forEach(q=>{
+   let col=q.n<=10?"#fff":q.n<=30?"#ffd52f":"#ff4935";
+
+   x.beginPath();
+   x.arc(q.x+5,q.y+6,q.R,0,7);
+   x.lineWidth=29;x.strokeStyle="#0003";x.stroke();
+
+   x.beginPath();
+   x.arc(q.x,q.y,q.R,0,7);
+   x.lineWidth=22;x.strokeStyle=col;x.stroke();
+ });
+}
+
+function wing(X,Y,f){
+ x.save();x.translate(X,Y);if(f)x.scale(-1,1);
+
+ x.beginPath();
+ x.moveTo(7,4);
+ x.bezierCurveTo(-10,-30,-55,-53,-80,-32);
+ x.bezierCurveTo(-71,-20,-65,-8,-58,2);
+ x.bezierCurveTo(-47,-4,-39,5,-30,15);
+ x.bezierCurveTo(-18,12,-8,8,7,4);
+ x.fillStyle="#fff";x.fill();
+ x.strokeStyle="#111";x.lineWidth=5;x.stroke();
+
+ x.lineWidth=3;
+ [-23,-9,4].forEach((Y,i)=>{
+   x.beginPath();
+   x.moveTo(-61+i*8,Y);
+   x.quadraticCurveTo(-45+i*8,Y+7,-34+i*8,Y+20);
+   x.stroke();
+ });
+ x.restore();
+}
+
+function fire(){
+ if(!en)return;
+
+ let L=20+en/5*60;
+
+ for(let i=0;i<en;i++){
+   x.save();
+   x.translate(b.x-18-i*7,b.y+10+i*4);
+   x.scale(1-i*.07,1-i*.07);
+
+   x.beginPath();
+   x.moveTo(0,0);
+   x.bezierCurveTo(-20,20,-17,45,0,L);
+   x.bezierCurveTo(17,45,20,20,0,0);
+   x.fillStyle=i%2?"#ff7000":"#fff000";
+   x.fill();
+   x.restore();
+ }
+}
+
+function ball(){
+ fire();
+
+ wing(b.x-17,b.y-9,0);
+ wing(b.x+17,b.y-9,1);
+
+ x.save();
+ x.translate(b.x,b.y);
+
+ let g=x.createRadialGradient(-9,-11,2,8,9,27);
+ g.addColorStop(0,"#ffbd5b");
+ g.addColorStop(.4,"#f58a28");
+ g.addColorStop(.75,"#d96114");
+ g.addColorStop(1,"#9d3608");
+
+ x.beginPath();x.arc(0,0,27,0,7);
+ x.fillStyle=g;x.fill();
+
+ x.strokeStyle="#15100c";
+ x.lineWidth=4;
+ x.lineCap="round";
+
+ x.beginPath();x.arc(-14,0,31,-Math.PI/2,Math.PI/2);x.stroke();
+ x.beginPath();x.arc(14,0,31,Math.PI/2,Math.PI*1.5);x.stroke();
+ x.beginPath();x.arc(0,-2,30,0,Math.PI);x.stroke();
+ x.beginPath();x.arc(0,2,30,Math.PI,Math.PI*2);x.stroke();
+
+ x.beginPath();
+ x.moveTo(-23,-14);
+ x.quadraticCurveTo(0,0,23,14);
+ x.stroke();
+
+ x.beginPath();
+ x.arc(-9,-11,4,0,7);
+ x.fillStyle="#fff6";
+ x.fill();
+
+ x.restore();
+}
+
+function draw(){
+ bg();rings();ball();
+}
+
+function loop(){
+ update();draw();requestAnimationFrame(loop);
+}
+
+start();loop();
+</script>
+</body>
+</html>
