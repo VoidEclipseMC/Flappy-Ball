@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{margin:0;overflow:hidden;background:#ccc}
+canvas{display:block}
+#s,#e{position:fixed;font:bold 50px Arial}
+#s{top:40%;left:45%;color:#6658}
+#e{top:5px;left:5px;font-size:25px}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="s">0</div>
+<div id="e">⚡⚡⚡⚡⚡</div>
+
+<script>
+c=document.getElementById("c");
+x=c.getContext("2d");
+c.width=innerWidth;c.height=innerHeight;
+
+let b={x:c.width*.25,y:c.height/2,v:0};
+let r=[],score=0,en=5,n=1;
+
+function add(X){
+ r.push({
+  x:X,
+  y:120+Math.random()*(c.height-240),
+  n:n++
+ });
+}
+
+for(i=0;i<4;i++)add(c.width+300+i*320);
+
+onpointerdown=()=>b.v=-8;
+
+function game(){
+
+ b.v+=.4;b.y+=b.v;
+
+ x.clearRect(0,0,c.width,c.height);
+
+ // fundal
+ x.fillStyle="#d0c7b5";
+ x.fillRect(0,0,c.width,c.height);
+
+ // cercuri
+ r.forEach(q=>{
+  q.x-=3;
+
+  x.beginPath();
+  x.arc(q.x,q.y,85,0,7);
+  x.lineWidth=20;
+  x.strokeStyle=q.n<=10?"white":q.n<=30?"#ffd52f":"#f44";
+  x.stroke();
+
+  if(!q.done&&q.x<b.x){
+   q.done=1;
+
+   if(Math.hypot(b.x-q.x,b.y-q.y)<65){
+    score++;
+    if(en<5)en++;
+   }else en--;
+
+   s.innerText=score;
+   e.innerText="⚡".repeat(en);
+
+   if(en<=0)location.reload();
+  }
+ });
+
+ let z=r[r.length-1];
+ if(z.x<c.width-250)add(z.x+320);
+
+ r=r.filter(q=>q.x>-100);
+
+
+ // aripi
+ x.fillStyle="white";
+
+ x.beginPath();
+ x.moveTo(b.x-15,b.y);
+ x.lineTo(b.x-65,b.y-35);
+ x.lineTo(b.x-40,b.y+5);
+ x.fill();
+
+ x.beginPath();
+ x.moveTo(b.x+15,b.y);
+ x.lineTo(b.x+65,b.y-35);
+ x.lineTo(b.x+40,b.y+5);
+ x.fill();
+
+
+ // flacari
+ x.fillStyle="#ff8000";
+
+ if(en){
+  x.beginPath();
+  x.moveTo(b.x-25,b.y+15);
+  x.lineTo(b.x-45,b.y+60);
+  x.lineTo(b.x-5,b.y+25);
+  x.fill();
+ }
+
+
+ // minge
+ x.fillStyle="#e87518";
+ x.beginPath();
+ x.arc(b.x,b.y,27,0,7);
+ x.fill();
+
+ // linii baschet
+ x.strokeStyle="#111";
+ x.lineWidth=3;
+
+ x.beginPath();
+ x.arc(b.x-12,b.y,28,-1.5,1.5);
+ x.stroke();
+
+ x.beginPath();
+ x.arc(b.x+12,b.y,28,1.5,4.7);
+ x.stroke();
+
+ x.beginPath();
+ x.arc(b.x,b.y,28,0,3.14);
+ x.stroke();
+
+ if(b.y>c.height||b.y<0)location.reload();
+
+ requestAnimationFrame(game);
+}
+
+game();
+</script>
+</body>
+  </html>
